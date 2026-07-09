@@ -4,35 +4,33 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Allows your Wix frontend to securely communicate with this backend
+# 🌐 This block allows your Wix frontend to securely communicate with this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows your Wix domain to bypass browser restrictions
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Free Hugging Face AI Model Endpoint (Vision Transformer for synthetic image detection)
-HF_API_URL = "https://api-inference.huggingface.co/models/capcheck/ai-image-detection"
+# 🚀 Free Hugging Face AI Model Endpoint (Vision Transformer for synthetic image detection)
+HF_API_URL = "https://api-inference.huggingface.co/models/capcheck/ai-image-detector"
+# Keep your actual Hugging Face authorization token format if you have one set up
+headers = {"Authorization": "Bearer hf_xxxxxx"} 
 
 @app.get("/")
-def home():
+def read_root():
     return {"status": "AI Detector Server is Running Online"}
 
 @app.post("/api/detect")
 async def detect_ai(file: UploadFile = File(...)):
     try:
-        # Read file bytes sent from Wix
+        # Reading the uploaded file bytes
         file_bytes = await file.read()
         
-        # Send the file bytes to Hugging Face's free infrastructure
-        response = requests.post(HF_API_URL, data=file_bytes)
+        # Forwarding the raw bytes straight to Hugging Face
+        response = requests.post(HF_API_URL, headers=headers, data=file_bytes)
         
-        if response.status_code == 200:
-            return {"status": "success", "analysis": response.json()}
-        else:
-            return {"status": "error", "message": "AI model tier is currently waking up or busy."}
-            
+        return {"analysis": response.json()}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"error": str(e)}
